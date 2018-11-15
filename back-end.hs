@@ -24,6 +24,25 @@ tableget sym ((id, val):vs) =
 --define this as a monad
 newtype M a = StOut (SymbolTable -> (a ,  SymbolTable , String))
 
+applyToFirst :: (a->a1) -> (a,b,c) -> (a1,b,c)
+applyToFirst f (a,b,c) = (f a, b, c)
+
+instance Functor M where
+    fmap func (StOut innerfunc) = StOut (applyToFirst func . innerfunc)
+
+compose func1 func2 table = (resfunc resval, restable, resstring)
+    where (resval, restable, resstring) = func2 table
+          (resfunc,_,_) = func1 table
+
+instance Applicative M where
+    pure a = StOut (\x -> (a, x, []))
+    (<*>) (StOut func1) (StOut func2) = StOut(compose func1 func2)
+
+instance Monad M where
+    return a = pure a
+    (>>=) (StOut innerfunc) func = (first . (applyToFirst func) . innerfunc) []
+        where first (a,_,_) = a
+
 eval :: Exp -> SymbolTable -> M Int
 eval exp table = case exp of
     Constant n -> return n
