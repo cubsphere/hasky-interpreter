@@ -55,7 +55,12 @@ first (a,_,_) = a
 
 instance Monad M where
     return a = pure a
-    (>>=) (StOut innerfunc) func = (first . (applyToFirst func) . innerfunc) []
+    (>>=) (StOut innerfunc) func = StOut (\x ->
+        let (r1, s1, o1) = innerfunc x
+            StOut(f) = func r1
+            (r2, s2, o2) = f s1
+        in (r2, s2, o1 ++ o2))
+
 
 unwrap :: M a -> a
 unwrap (StOut f) = first $ f []
@@ -73,7 +78,7 @@ eval expr table = case expr of
 
 exec :: Com -> SymbolTable -> M SymbolTable
 exec stm table = case stm of
-    Assign name expr -> return $ tableset name (unwrap $ eval expr table) table --TODO
+    Assign name expr -> return $ tableset name (unwrap $ eval expr table) table
     Seq com1 com2 -> do
         table1 <- exec com1 table
         table2 <- exec com2 table1
@@ -93,8 +98,10 @@ exec stm table = case stm of
             where removefirst ((nam, val):vs) = if nam == name
                                               then vs
                                               else (nam,val):(removefirst vs)
+    Print expr -> StOut (\st -> ([], st, (show $ unwrap $ eval expr table) ++ "\n"))
 
-    Print expr -> return[] --TODO
-
-output :: Show a => a -> M ()
-output v = StOut (\n -> ((), n, show v))
+test :: String
+test = let
+    StOut f = exec (Seq (Assign "x" (Plus (Constant 5)  (Constant 2))) (Print (Variable "x"))) []
+    (_,_,str) = (f [])
+    in str
