@@ -2,19 +2,20 @@ import Text.ParserCombinators.Parsec
 import Text.Parsec (ParsecT)
 import Text.Parsec.Prim (Stream)
 import PolyConc
+import Data.Functor.Identity (Identity)
 
 -- EXPRESSOES
 -- <relop> ::= > | < | =
-relop = try (char '>')
-        <|> try (char '<')
+relop = (char '>')
+        <|> (char '<')
         <|> char '='
 
 -- <mulop> ::= * | /
-mulop = try (char '*')
+mulop = (char '*')
         <|> char '/'
 
 -- <addop> ::= + | -
-addop = try (char '+')
+addop = (char '+')
         <|> char '-'
 
 -- <digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
@@ -27,9 +28,10 @@ digiti = many1 digit
 var = (:) <$> letter <*> many alphaNum
 
 -- <factor> ::= <var> | <digiti> | (<expr>)
+factor :: ParsecT [Char] u Identity [Char]
 factor =
-  try var
-  <|> try digiti
+  var
+  <|> digiti
   <|> (polyConc) <$> (string "(" <* spaces) <*> expr <*> (spaces *> string ")")
 
 -- <term> ::= <term> <mulop> <factor> | <factor>
@@ -38,9 +40,8 @@ factor =
 -- <term'> ::= <mulop> <factor> <term'> | vazio
 term = (++) <$> (factor <* spaces) <*> term'
   where
-    term' = try (
+    term' =
       (polyConc) <$> (mulop <* spaces) <*> factor <*> (spaces *> term')
-      )
       <|> string ""
 
 -- <expr> ::= <expr> <addop> <term> | <term>
@@ -49,9 +50,8 @@ term = (++) <$> (factor <* spaces) <*> term'
 -- <expr'> ::= <addop> <term> <expr'> | vazio
 expr = (++) <$> (term <* spaces) <*> expr'
   where
-    expr' = try (
+    expr' =
       (polyConc) <$> (addop <* spaces) <*> term <*> (spaces *> expr')
-      )
       <|> string ""
   
   
@@ -61,7 +61,6 @@ expr = (++) <$> (term <* spaces) <*> expr'
 -- <rexp'> ::= <relop> <expr> <rexp'> | vazio
 rexp = (++) <$> (expr <* spaces) <*> rexp'
   where
-    rexp' = try (
+    rexp' =
       (polyConc) <$> (relop <* spaces) <*> expr <*> (spaces *> rexp')
-      )
       <|> string ""
