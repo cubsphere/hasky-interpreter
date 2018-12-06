@@ -2,6 +2,7 @@
 import Text.ParserCombinators.Parsec
 import Text.Parsec (ParsecT)
 import Text.Parsec.Prim (Stream)
+import PolyConc
 
 -- EXPRESSOES
 -- <relop> ::= > | < | =
@@ -32,9 +33,7 @@ var = (++) <$> many1 letter <*> many alphaNum
 factor =
   try var
   <|> try digiti
-  <|> (aux) <$> (string "(" <* spaces) <*> expr <*> (spaces *> string ")")
-  where
-    aux a b c = a ++ b ++ c
+  <|> (polyConc) <$> (string "(" <* spaces) <*> expr <*> (spaces *> string ")")
 
 -- <term> ::= <term> <mulop> <factor> | <factor>
 -- eliminado recursao a' esquerda:
@@ -42,9 +41,8 @@ factor =
 -- <term'> ::= <mulop> <factor> <term'> | vazio
 term = (++) <$> (factor <* spaces) <*> term'
   where
-    aux a b c =  a : b ++ c
     term' = try (
-      (aux) <$> (mulop <* spaces) <*> factor <*> (spaces *> term')
+      (polyConc) <$> (mulop <* spaces) <*> factor <*> (spaces *> term')
       )
       <|> string ""
 
@@ -54,9 +52,8 @@ term = (++) <$> (factor <* spaces) <*> term'
 -- <expr'> ::= <addop> <term> <expr'> | vazio
 expr = (++) <$> (term <* spaces) <*> expr'
   where
-    aux a b c = a : b ++ c
     expr' = try (
-      (aux) <$> (addop <* spaces) <*> term <*> (spaces *> expr')
+      (polyConc) <$> (addop <* spaces) <*> term <*> (spaces *> expr')
       )
       <|> string ""
   
@@ -67,8 +64,7 @@ expr = (++) <$> (term <* spaces) <*> expr'
 -- <rexp'> ::= <relop> <expr> <rexp'> | vazio
 rexp = (++) <$> (expr <* spaces) <*> rexp'
   where
-    aux a b c = a : b ++ c
     rexp' = try (
-      (aux) <$> (relop <* spaces) <*> expr <*> (spaces *> rexp')
+      (polyConc) <$> (relop <* spaces) <*> expr <*> (spaces *> rexp')
       )
       <|> string ""
