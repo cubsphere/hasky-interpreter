@@ -3,6 +3,7 @@ import Text.ParserCombinators.Parsec
 import Text.Parsec (ParsecT)
 import Text.Parsec.Prim (Stream)
 
+-- EXPRESSOES
 -- <relop> ::= > | < | =
 relop = try (char '>')
         <|> try (char '<')
@@ -25,43 +26,25 @@ digiti = many1 digit
 
 -- <var> ::= <Identifier> que sera letter+ ++ alphanum*
 var :: Stream s m Char => ParsecT s u m [Char]
-var = do
-  start <- many1 letter
-  rest <- many alphaNum
-  return (start ++ rest)
+var = (++) <$> many1 letter <*> many alphaNum
 
 -- <factor> ::= <var> | <digiti> | (<expr>)
 factor =
   try var
   <|> try digiti
-  <|>
-  do
-    pi <- string "("
-    spaces
-    e <- expr
-    spaces
-    pf <- string ")"
-    return $ pi ++ e ++ pf
+  <|> (aux) <$> (string "(" <* spaces) <*> expr <*> (spaces *> string ")")
+  where
+    aux a b c = a ++ b ++ c
 
 -- <term> ::= <term> <mulop> <factor> | <factor>
 -- eliminado recursao a' esquerda:
 -- <term> ::= <factor> <term'>
 -- <term'> ::= <mulop> <factor> <term'> | vazio
-term =
-  do
-    f <- factor
-    spaces
-    t' <-term'
-    return $ f ++ t'
+term = (++) <$> (factor <* spaces) <*> term'
   where
+    aux a b c =  a : b ++ c
     term' = try (
-      do
-        m <- mulop
-        spaces
-        f1 <- factor
-        spaces
-        t1' <- term'
-        return $ m : f1 ++ t1'
+      (aux) <$> (mulop <* spaces) <*> factor <*> (spaces *> term')
       )
       <|> string ""
 
@@ -69,21 +52,11 @@ term =
 
 -- <expr> ::=  <term> <expr'>
 -- <expr'> ::= <addop> <term> <expr'> | vazio
-expr =
-  do
-    t <- term
-    spaces
-    e' <- expr'
-    return $ t ++ e'
+expr = (++) <$> (term <* spaces) <*> expr'
   where
+    aux a b c = a : b ++ c
     expr' = try (
-      do
-        aop <- addop
-        spaces
-        t <- term
-        spaces
-        ex' <- expr'
-        return $ aop : t ++ ex'
+      (aux) <$> (addop <* spaces) <*> term <*> (spaces *> expr')
       )
       <|> string ""
   
@@ -92,20 +65,10 @@ expr =
 
 -- <rexp> ::= <expr> <rexp'>
 -- <rexp'> ::= <relop> <expr> <rexp'> | vazio
-rexp =
-  do
-    e <- expr
-    spaces
-    r' <- rexp'
-    return $ e ++ r'
+rexp = (++) <$> (expr <* spaces) <*> rexp'
   where
+    aux a b c = a : b ++ c
     rexp' = try (
-      do
-        rl <- relop
-        spaces
-        e1 <- expr
-        spaces
-        r1' <- rexp'
-        return $ rl : e1 ++ r1'
+      (aux) <$> (relop <* spaces) <*> expr <*> (spaces *> rexp')
       )
       <|> string ""
