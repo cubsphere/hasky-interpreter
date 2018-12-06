@@ -43,7 +43,9 @@ factor =
   <|>
   do
     pi <- string "("
+    spaces
     e <- expr
+    spaces
     pf <- string ")"
     return $ pi ++ e ++ pf
 
@@ -54,13 +56,16 @@ factor =
 term =
   do
     f <- factor
+    spaces
     t' <-term'
     return $ f ++ t'
   where
     term' = try (
       do
         m <- mulop
+        spaces
         f1 <- factor
+        spaces
         t1' <- term'
         return $ m : f1 ++ t1'
       )
@@ -73,13 +78,16 @@ term =
 expr =
   do
     t <- term
+    spaces
     e' <- expr'
     return $ t ++ e'
   where
     expr' = try (
       do
         aop <- addop
+        spaces
         t <- term
+        spaces
         ex' <- expr'
         return $ aop : t ++ ex'
       )
@@ -93,13 +101,16 @@ expr =
 rexp =
   do
     e <- expr
+    spaces
     r' <- rexp'
     return $ e ++ r'
   where
     rexp' = try (
       do
         rl <- relop
+        spaces
         e1 <- expr
+        spaces
         r1' <- rexp'
         return $ rl : e1 ++ r1'
       )
