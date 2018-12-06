@@ -23,8 +23,8 @@ addop = try (char '+')
 -- <digiti> ::= <digit> | <digiti> <digiti>
 digiti = many1 digit
 
--- <var> ::= <Identifier> que sera letter+ ++ alphanum*
-var = (++) <$> many1 letter <*> many alphaNum
+-- <var> ::= <Identifier> que sera letter ++ alphanum*
+var = (:) <$> letter <*> many alphaNum
 
 -- <factor> ::= <var> | <digiti> | (<expr>)
 factor =
