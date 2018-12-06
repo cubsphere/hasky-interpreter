@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 import Text.ParserCombinators.Parsec
 import Text.Parsec (ParsecT)
 import Text.Parsec.Prim (Stream)
@@ -22,11 +21,9 @@ addop = try (char '+')
 -- digit ja esta definido no parsec
 
 -- <digiti> ::= <digit> | <digiti> <digiti>
-digiti :: Stream s m Char => ParsecT s u m [Char]
 digiti = many1 digit
 
 -- <var> ::= <Identifier> que sera letter+ ++ alphanum*
-var :: Stream s m Char => ParsecT s u m [Char]
 var = (++) <$> many1 letter <*> many alphaNum
 
 -- <factor> ::= <var> | <digiti> | (<expr>)
