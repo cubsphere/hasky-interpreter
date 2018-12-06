@@ -3,12 +3,6 @@ import Text.ParserCombinators.Parsec
 import Text.Parsec (ParsecT)
 import Text.Parsec.Prim (Stream)
 
-{-
-import Text.ParserCombinators.Parsec.Expr
-import Text.ParserCombinators.Parsec.Language
-import qualified Text.ParserCombinators.Parsec.Token as Token
--}
-
 -- <relop> ::= > | < | =
 relop = try (char '>')
         <|> try (char '<')
@@ -115,39 +109,3 @@ rexp =
         return $ rl : e1 ++ r1'
       )
       <|> string ""
-  
-{-
-languageDef =
-  emptyDef { Token.commentStart = "/*"
-           , Token.commentEnd = "*/"
-           , Token.commentLine = "//"
-           , Token.identStart = letter
-           , Token.identLetter = alphaNum
-           , Token.reservedNames = ["if"
-                                   ,"then"
-                                   ,"else"
-                                   ,"while"
-                                   ,"do"
-                                   ,"declare"
-                                   ,"in"
-                                   ,"print"
-                                   ]
-           , Token.reservedOpNames = ["<",">","="
-                                     ,"-","+"
-                                     ,"*","/"]
-           }
-
-lexer = Token.makeTokenParser languageDef
-
--- extraindo parsers lexicos
-identifier = Token.identifier lexer
-reserved   = Token.reserved   lexer
-reservedOp = Token.reservedOp lexer
-parens     = Token.parens     lexer
-integer    = Token.integer    lexer
-pv         = Token.semi       lexer -- ;
-whiteSpace = Token.whiteSpace lexer
-
-whileParser :: Parser Com
-whileParser = whiteSpace >> statement
--}
