@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Front
 
 main :: IO ()
-main = someFunc
+main = putStrLn "Bem-vindo ao hasky-compiler\n" >> (compute =<< readLn)

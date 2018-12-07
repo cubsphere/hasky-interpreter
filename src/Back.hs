@@ -1,44 +1,44 @@
 module Back
   (
-    Exp (Constant, Variable, Plus, Minus, Greater, Less, Equal, Times, Divide, Empty)
+    Exp (Constant, Variable, Plus, Minus, Greater, Less, Equal, Times, Divide)
   , Com (Assign, Seq, Cond, While, Declare, Print)
+  , interp
   ) where
 
 data Exp = Constant Int
-    | Variable String
-    | Plus Exp Exp
-    | Minus Exp Exp
-    | Greater Exp Exp
-    | Less Exp Exp
-    | Equal Exp Exp
-    | Times Exp Exp
-    | Divide Exp Exp
-    | Empty
-    deriving Show
+         | Variable String
+         | Plus Exp Exp
+         | Minus Exp Exp
+         | Greater Exp Exp
+         | Less Exp Exp
+         | Equal Exp Exp
+         | Times Exp Exp
+         | Divide Exp Exp
+         deriving Show
 
-data Com =  Assign Exp Exp
-    |  Seq Com Com
-    |  Cond Exp Com Com
-    |  While Exp Com
-    |  Declare Exp Exp Com
-    |  Print Exp
-    deriving Show
+data Com = Assign Exp Exp
+         | Seq Com Com
+         | Cond Exp Com Com
+         | While Exp Com
+         | Declare Exp Exp Com
+         | Print Exp
+         deriving Show
 
 type SymbolTable = [(String, Int)]
 
 tableset :: Exp -> Int -> SymbolTable -> SymbolTable
 tableset s@(Variable sym) new [] = [(sym, new)]
 tableset s@(Variable sym) new ((tablesym, old):vs) =
-    if tablesym == sym
-        then ((sym, new):vs)
-        else ((tablesym, old):(tableset s new vs))
+  if tablesym == sym
+  then ((sym, new):vs)
+  else ((tablesym, old):(tableset s new vs))
 
 tableget :: Exp -> SymbolTable -> Int
 tableget _ [] = 0
 tableget s@(Variable sym) ((tablesym, val):vs) =
-    if tablesym == sym
-        then val
-        else tableget s vs
+  if tablesym == sym
+  then val
+  else tableget s vs
 
 --define this as a monad
 newtype M a = StOut (SymbolTable -> (a ,  SymbolTable , String))
@@ -82,33 +82,44 @@ eval expr table = case expr of
     Plus e1 e2 -> return $ unwrap (eval e1 table) + unwrap (eval e2 table)
     Minus e1 e2 -> return $ unwrap (eval e1 table) - unwrap (eval e2 table)
     Greater e1 e2 -> if unwrap (eval e1 table) > unwrap (eval e2 table)
-                        then return 1
-                        else return 0
+                     then return 1
+                     else return 0
+    Less e1 e2 -> if unwrap (eval e1 table) < unwrap (eval e2 table)
+                  then return 1
+                  else return 0
+    Equal e1 e2 -> if unwrap (eval e1 table) == unwrap (eval e2 table)
+                   then return 1
+                   else return 0
     Times e1 e2 -> return $ unwrap (eval e1 table) * unwrap (eval e2 table)
+    Divide e1 e2 -> return $ unwrap (eval e1 table) `div` unwrap (eval e2 table)
 
 exec :: Com -> SymbolTable -> M SymbolTable
 exec stm table = case stm of
-    Assign name expr -> return $ tableset name (unwrap $ eval expr table) table
-    Seq com1 com2 -> do
-        table1 <- exec com1 table
-        table2 <- exec com2 table1
-        return table2
-    Cond expr com1 com2 ->
-        if 0 /= (unwrap $ eval expr table)
-        then exec com1 table
-        else exec com2 table
-    While expr com -> do
-        if 0 /= (unwrap $ eval expr table)
-        then exec stm (unwrap $ exec com table)
-        else return table
-    Declare (Variable name) expr com -> do
-        --special insertion at the front guarantees local variable properties
-        table1 <- exec com ((name, unwrap $ eval expr table):table)
-        return (removefirst table1)
-            where removefirst ((nam, val):vs) = if nam == name
-                                              then vs
-                                              else (nam,val):(removefirst vs)
-    Print expr -> StOut (\st -> ([], st, (show $ unwrap $ eval expr table) ++ "\n"))
+  Assign name expr -> return $ tableset name (unwrap $ eval expr table) table
+  Seq com1 com2 -> do
+    table1 <- exec com1 table
+    table2 <- exec com2 table1
+    return table2
+  Cond expr com1 com2 ->
+    if 0 /= (unwrap $ eval expr table)
+    then exec com1 table
+    else exec com2 table
+  While expr com -> do
+    if 0 /= (unwrap $ eval expr table)
+      then exec stm (unwrap $ exec com table)
+      else return table
+  Declare (Variable name) expr com -> do
+    --special insertion at the front guarantees local variable properties
+    table1 <- exec com ((name, unwrap $ eval expr table):table)
+    return (removefirst table1)
+      where removefirst ((nam, val):vs) = if nam == name
+                                          then vs
+                                          else (nam,val):(removefirst vs)
+            removefirst [] = []
+  Print expr -> StOut (\st -> ([], st, (show $ unwrap $ eval expr table)))
+
+
+interp a = unStOut (exec a []) []
 
 test :: String
 test = let

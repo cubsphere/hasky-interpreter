@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Front
   (
-    com
+    compute
   ) where
 
 import Text.ParserCombinators.Parsec
@@ -121,12 +121,29 @@ assign = (Assign) <$> var <*> (spaces *> string ":=" *> spaces *> rexp)
 -- <com> ::= <assign> | <seqv> | <cond> | <while> | <declare> | <printe>
 com = try assign <|> try seqv <|> try cond <|> try while <|> try declare <|> printe <?> "com"
 
-{-
+
+compute = c' . parse com ""
+  where c' (Right v) = print $ interp v
+        c' (Left v) = print v
+
 test :: IO ()
 test = do
-  putStrLn "TESTANDO..."
+  putStrLn "DEVERIA DAR 50"
+  compute "declare x=150 in declare y = 200 in { while x < 300 do { x:= x+1; y := y - 1};print y}"
 
-  -- rexp
+  putStrLn "\n\nDEVERIA DAR 200"
+  compute "declare x=150 in declare y = 200 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y}"
+
+  putStrLn "\n\nDEVERIA DAR 149"
+  compute "declare x=150 in declare y = 150 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y}"
+
+  putStrLn "\n\nDEVERIA DAR 300"
+  compute "declare x=150 in declare y = 150 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y+x}"
+
+  putStrLn "\n\nDEVERIA DAR 202"
+  compute "declare x=150 in declare y = 200 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y+x}"
+  
+{-  -- rexp
   let testN = 1 :: Integer
   putStrLn "\ntestando rexp"
   putStr "teste..." >> print testN
