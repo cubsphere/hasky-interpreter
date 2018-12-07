@@ -14,28 +14,24 @@ se não tiver, então instala como quiser o Text.Parsec >= 3.1.13.0 e roda o `ap
 entra com o programa.
 exemplos:
 ```
-Bem-vindo ao hasky-compiler
-
+Bem-vindo ao hasky-interpreter
 
 declare x=150 in declare y = 200 in { while x < 300 do { x:= x+1; y := y - 1};print y}
 ```
 ```
-Bem-vindo ao hasky-compiler
-
+Bem-vindo ao hasky-interpreter
 
 declare x=150 in declare y = 200 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y}
 ```
 
 ```
-Bem-vindo ao hasky-compiler
-
+Bem-vindo ao hasky-interpreter
 
 declare x=150 in declare y = 150 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y+x}
 ```
 
 ```
-Bem-vindo ao hasky-compiler
-
+Bem-vindo ao hasky-interpreter
 
 declare x=150 in declare y = 200 in { if y = x then { x:= x+1; y := y - 1} else x:=2 ;print y+x}
 ```
