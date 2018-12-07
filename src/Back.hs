@@ -1,36 +1,44 @@
-
+module Back
+  (
+    Exp (Constant, Variable, Plus, Minus, Greater, Less, Equal, Times, Divide, Empty)
+  , Com (Assign, Seq, Cond, While, Declare, Print)
+  ) where
 
 data Exp = Constant Int
     | Variable String
     | Plus Exp Exp
     | Minus Exp Exp
     | Greater Exp Exp
+    | Less Exp Exp
+    | Equal Exp Exp
     | Times Exp Exp
+    | Divide Exp Exp
+    | Empty
     deriving Show
 
-data Com =  Assign String Exp
+data Com =  Assign Exp Exp
     |  Seq Com Com
     |  Cond Exp Com Com
     |  While Exp Com
-    |  Declare String Exp Com
+    |  Declare Exp Exp Com
     |  Print Exp
     deriving Show
 
 type SymbolTable = [(String, Int)]
 
-tableset :: String -> Int -> SymbolTable -> SymbolTable
-tableset sym new [] = [(sym, new)]
-tableset sym new ((tablesym, old):vs) =
+tableset :: Exp -> Int -> SymbolTable -> SymbolTable
+tableset s@(Variable sym) new [] = [(sym, new)]
+tableset s@(Variable sym) new ((tablesym, old):vs) =
     if tablesym == sym
         then ((sym, new):vs)
-        else ((tablesym, old):(tableset sym new vs))
+        else ((tablesym, old):(tableset s new vs))
 
-tableget :: String -> SymbolTable -> Int
+tableget :: Exp -> SymbolTable -> Int
 tableget _ [] = 0
-tableget sym ((tablesym, val):vs) =
+tableget s@(Variable sym) ((tablesym, val):vs) =
     if tablesym == sym
         then val
-        else tableget sym vs
+        else tableget s vs
 
 --define this as a monad
 newtype M a = StOut (SymbolTable -> (a ,  SymbolTable , String))
@@ -70,7 +78,7 @@ unwrap (StOut f) = first $ f []
 eval :: Exp -> SymbolTable -> M Int
 eval expr table = case expr of
     Constant n -> return n
-    Variable x -> return (tableget x table)
+    v@(Variable x) -> return (tableget v table)
     Plus e1 e2 -> return $ unwrap (eval e1 table) + unwrap (eval e2 table)
     Minus e1 e2 -> return $ unwrap (eval e1 table) - unwrap (eval e2 table)
     Greater e1 e2 -> if unwrap (eval e1 table) > unwrap (eval e2 table)
@@ -93,7 +101,7 @@ exec stm table = case stm of
         if 0 /= (unwrap $ eval expr table)
         then exec stm (unwrap $ exec com table)
         else return table
-    Declare name expr com -> do
+    Declare (Variable name) expr com -> do
         --special insertion at the front guarantees local variable properties
         table1 <- exec com ((name, unwrap $ eval expr table):table)
         return (removefirst table1)
@@ -104,6 +112,6 @@ exec stm table = case stm of
 
 test :: String
 test = let
-    StOut f = exec (Seq (Assign "x" (Plus (Constant 5)  (Constant 2))) (Print (Variable "x"))) []
+    StOut f = exec (Seq (Assign (Variable "x") (Plus (Constant 5)  (Constant 2))) (Print (Variable "x"))) []
     (_,_,str) = (f [])
     in str
