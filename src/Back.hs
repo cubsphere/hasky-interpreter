@@ -1,3 +1,5 @@
+
+
 data Exp = Constant Int
     | Variable String
     | Plus Exp Exp
