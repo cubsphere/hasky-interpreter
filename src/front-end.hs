@@ -320,4 +320,13 @@ test = do
     Left e -> putStrLn "OK"
   testN <- return (succ testN)
 
+  -- testando programa da especificacao
+
+  putStrLn "\ntestando programa da especificacao"
+  let ret = parse com "" "declare x=150 in declare y = 200 in { while x > 0 do { x:= x-1; y := y - 1};print y}"
+  case (ret) of
+    Right e -> if (e == "declare x=150 in declare y=200 in {while x>0 do {x:=x-1;y:=y-1};print y}")
+      then putStrLn "OK" else putStr "ERRO - " >> print e >> putStrLn ""
+    Left e -> putStrLn "ERRO"
+
   return ()
